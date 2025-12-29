@@ -1,0 +1,64 @@
+@startuml
+title FreeRTOS System Architecture (STM32)
+
+skinparam rectangle {
+    BackgroundColor #F9F9F9
+    BorderColor #333333
+}
+
+skinparam arrow {
+    Color #333333
+}
+
+package "FreeRTOS Kernel" {
+
+    rectangle "Scheduler\n(Cooperative)" as scheduler
+
+    rectangle "Temperature Task\n(SHT3x + OLED)\n\n- Reads SHT3x\n- Converts units\n- Updates OLED\n- taskYIELD()" as tempTask
+
+    rectangle "Button Task\n\n- Waits on semaphore\n- Toggles °C / °F\n- taskYIELD()" as buttonTask
+
+    rectangle "Binary Semaphore\n(ButtonSem)" as semaphore
+}
+
+package "Hardware" {
+
+    rectangle "SHT3x Sensor\n(I2C)" as sht3x
+    rectangle "OLED Display\n(I2C)" as oled
+    rectangle "User Button\n(EXTI)" as button
+}
+
+rectangle "Button ISR\n(EXTI_IRQHandler)\n\nxSemaphoreGiveFromISR()" as isr
+
+rectangle "Shared State\nTemperature Unit\n(Celsius / Fahrenheit)" as sharedState
+
+'-------------------
+' Connections
+'-------------------
+
+scheduler --> tempTask : schedules
+scheduler --> buttonTask : schedules
+
+tempTask --> sht3x : I2C Read
+tempTask --> oled : I2C Write
+
+button --> isr : interrupt
+isr --> semaphore : give
+
+buttonTask --> semaphore : take
+buttonTask --> sharedState : toggle unit
+
+tempTask --> sharedState : read unit
+
+note right of tempTask
+Runs periodically or loop-based
+Cooperative scheduling:
+must yield explicitly
+end note
+
+note right of buttonTask
+Unblocked only when
+button is pressed
+end note
+
+@enduml

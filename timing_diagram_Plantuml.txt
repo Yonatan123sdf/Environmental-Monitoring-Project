@@ -1,0 +1,35 @@
+@startuml
+title FreeRTOS Timing Diagram (Compact View)
+
+scale 1.0
+
+robust "Sensor Task" as Sensor
+robust "Button Task" as Button
+robust "Button ISR" as ISR
+
+@0
+Sensor is Running
+Button is Waiting
+
+@30
+Sensor is Sleeping : osDelay(1000)
+
+@200
+ISR is Active
+@205
+ISR is Idle
+
+@210
+Button is Running : Toggle °C / °F
+@240
+Button is Sleeping : Debounce
+
+@300
+Button is Waiting
+
+@1000
+Sensor is Running
+@1030
+Sensor is Sleeping
+
+@enduml
